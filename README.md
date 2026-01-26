@@ -22,6 +22,7 @@ Note: This project can run using a Pimoroni Pirate Audio HAT as the screen (see 
 - ST7789-based 240x240 SPI display OR a Pimoroni Pirate Audio HAT (used here as the screen)
 - 3 momentary push buttons
 - Wires, breadboard, and pull-up resistors (or use internal pull-ups)
+- a phone with nfc tools(to write the nfc ndef text to it)
 
 ### Pirate Audio (Pimoroni) HAT
 If you're using the [Pimoroni Pirate Audio HAT](https://shop.pimoroni.com/products/pirate-audio) as the display, it provides a compact screen and audio features. The HAT typically exposes the display over SPI and uses specific GPIO pins for DC/backlight/chip select. Because Pirate Audio wiring/pin mapping can differ from a raw SPI display breakout, you may need to update the `st7789.ST7789(...)` constructor parameters in `main.py` to match the HAT's pins or use Pimoroni's helper libraries.
