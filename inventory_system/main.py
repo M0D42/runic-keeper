@@ -72,35 +72,38 @@ def draw_rune_border(draw):
         draw.text((5, 215), "ᛏ", font=corner_font, fill=GOLD)
         draw.text((215, 215), "ᛟ", font=corner_font, fill=GOLD)
     except: pass
-
-# --- 4. UI FUNCTIONS ---
 def bootup():
+    # Create the dark void background
     bg = Image.new("RGB", (240, 240), DEEP_VOID)
     draw = ImageDraw.Draw(bg)
     
-    # --- ADDING M0D LOGO ---
     try:
-        # Load, resize to 40x40, and ensure it handles transparency
-        logo = Image.open("M0D.png").convert("RGBA").resize((40, 40))
-        # Paste logo at (100, 20) - adjusted to be top-center
-        bg.paste(logo, (100, 20), logo)
-    except Exception as e:
-        print(f"Logo Error: {e}")
-
-    try:
-        rune_big = ImageFont.truetype(RUNE_FONT_PATH, 45)
-        text_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22)
+        # 1. Load and Paste the M0D icon at 40x40
+        icon = Image.open("M0D.png").convert("RGBA").resize((40, 40))
+        # Pasting at (100, 30) centers it horizontally (240/2 - 40/2 = 100)
+        bg.paste(icon, (100, 30), icon)
         
-        # Shifted text down slightly to make room for the logo
-        draw.text((45, 80), to_runes("RUNIC"), font=rune_big, fill=GLOW_BLUE)
-        draw.text((45, 140), "KEEPER", font=text_small, fill=GOLD)
-    except:
-        draw.text((45, 110), "RUNIC KEEPER", fill=GOLD)
-    
-    draw_rune_border(draw)
-    disp.display(bg)
-    time.sleep(2)
+        # 2. Setup Fonts
+        rune_font_large = ImageFont.truetype(RUNE_FONT_PATH, 45)
+        title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
+    except Exception as e:
+        print(f"Bootup Assets Missing: {e}")
+        rune_font_large = title_font = ImageFont.load_default()
 
+    # 3. Draw the Runic Title (Center-ish)
+    # "RUNIC" in runes
+    draw.text((45, 85), to_runes("RUNIC"), font=rune_font_large, fill=GLOW_BLUE)
+    
+    # 4. Draw "KEEPER" in English
+    draw.text((75, 145), "KEEPER", font=title_font, fill=GOLD)
+    
+    # 5. Draw the decorative corner runes
+    draw_rune_border(draw)
+
+    # Display to screen
+    disp.display(bg)
+    time.sleep(2.5)
+# --- 4. UI FUNCTIONS ---
 def show_inventory():
     global current_selection 
     inventory = load_inventory()
