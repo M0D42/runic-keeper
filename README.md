@@ -19,8 +19,7 @@ Note: This project can run using a Pimoroni Pirate Audio HAT as the screen (see 
 ## Hardware required
 - Raspberry Pi (3/4/Zero W)
 - PN532 NFC/RFID breakout or HAT (I2C mode)
-- ST7789-based 240x240 SPI display OR a Pimoroni Pirate Audio HAT (used here as the screen)
-- 3 momentary push buttons
+- pimodori pirate audio hat for the buttons and screen any works.
 - Wires, breadboard, and pull-up resistors (or use internal pull-ups)
 - a phone with nfc tools(to write the nfc ndef text to it)
 
