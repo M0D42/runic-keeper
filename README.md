@@ -123,11 +123,9 @@ Controls:
   - The code reads NTAG blocks and looks for an NDEF Text record. If your tags use a different format, they might not be parsed.
 
 ## Extending / Improvements
-- Add a systemd service to run at boot.
-- Store inventory in a structured format (JSON) to add metadata such as timestamps or counts.
-- Add icon per-item or pagination on the display.
-- Improve tag parsing to support multiple record types and better error handling.
-- Add Pirate Audio-specific initialization or a small adapter module to detect and configure the HAT automatically.
+- adding a medival astetic
+
+
 
 ## License
 MIT License — see LICENSE file (add one to the repo if desired).
