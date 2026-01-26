@@ -74,17 +74,28 @@ def draw_rune_border(draw):
     except: pass
 
 # --- 4. UI FUNCTIONS ---
-
 def bootup():
     bg = Image.new("RGB", (240, 240), DEEP_VOID)
     draw = ImageDraw.Draw(bg)
+    
+    # --- ADDING M0D LOGO ---
+    try:
+        # Load, resize to 40x40, and ensure it handles transparency
+        logo = Image.open("M0D.png").convert("RGBA").resize((40, 40))
+        # Paste logo at (100, 20) - adjusted to be top-center
+        bg.paste(logo, (100, 20), logo)
+    except Exception as e:
+        print(f"Logo Error: {e}")
+
     try:
         rune_big = ImageFont.truetype(RUNE_FONT_PATH, 45)
         text_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 22)
-        draw.text((45, 70), to_runes("RUNIC"), font=rune_big, fill=GLOW_BLUE)
-        draw.text((45, 130), "KEEPER", font=text_small, fill=GOLD)
+        
+        # Shifted text down slightly to make room for the logo
+        draw.text((45, 80), to_runes("RUNIC"), font=rune_big, fill=GLOW_BLUE)
+        draw.text((45, 140), "KEEPER", font=text_small, fill=GOLD)
     except:
-        draw.text((45, 100), "RUNIC KEEPER", fill=GOLD)
+        draw.text((45, 110), "RUNIC KEEPER", fill=GOLD)
     
     draw_rune_border(draw)
     disp.display(bg)
