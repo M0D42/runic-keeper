@@ -1,0 +1,10 @@
+# Minimal dependencies required to run inventory_system/main.py
+# Install with: pip install -r requirements.txt
+
+Adafruit-Blinka           # provides board, busio and hardware layer for Raspberry Pi
+adafruit-circuitpython-pn532
+Pillow                    # PIL / image handling
+st7789                    # display driver for ST7789-based displays
+ndef                      # NDEF text record parsing
+RPi.GPIO                  # GPIO access on Raspberry Pi
+spidev                    # SPI support (used by many display drivers)
