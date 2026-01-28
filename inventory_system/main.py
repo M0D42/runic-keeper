@@ -11,7 +11,7 @@ import os
 # --- 1. CONFIGURATION & MAGICAL THEME ---
 RUNE_FONT_PATH = "BabelStoneRunic.ttf"
 INVENTORY_FILE = "inventory.txt"
-BUTTONS = [5, 6, 16] 
+BUTTONS = [16, 24] # Pin 6 removed as it wasn't used in your logic
 HOLD_DELAY = 2.0
 
 # Globals
@@ -20,11 +20,16 @@ last_scan_time = 0
 
 # Colors
 GOLD = (212, 175, 55)
-GLOW_BLUE = (0, 255, 230)       # Bright blue for selection
-GHOST_BLUE = (0, 80, 150)       # Deep mystical blue for other items
+GLOW_BLUE = (0, 255, 230)
+GHOST_BLUE = (0, 80, 150)
 DEEP_VOID = (5, 5, 15)
 
 # --- 2. HARDWARE INITIALIZATION ---
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+# NFC Setup
 i2c = busio.I2C(board.SCL, board.SDA)
 try:
     pn532 = PN532_I2C(i2c, debug=False)
@@ -34,6 +39,7 @@ except Exception as e:
     print(f"NFC: Connection Failed ({e})")
     pn532 = None
 
+# Display Setup
 disp = st7789.ST7789(
     port=0, cs=1, dc=9, backlight=13,
     spi_speed_hz=40 * 1000 * 1000,
@@ -41,10 +47,7 @@ disp = st7789.ST7789(
 )
 disp.begin()
 
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-# --- 3. THE TRANSMUTER ---
+# --- 3. THE TRANSMUTER (HELPER FUNCTIONS) ---
 
 def to_runes(text):
     mapping = {
@@ -72,38 +75,25 @@ def draw_rune_border(draw):
         draw.text((5, 215), "ᛏ", font=corner_font, fill=GOLD)
         draw.text((215, 215), "ᛟ", font=corner_font, fill=GOLD)
     except: pass
+
 def bootup():
-    # Create the dark void background
     bg = Image.new("RGB", (240, 240), DEEP_VOID)
     draw = ImageDraw.Draw(bg)
-    
     try:
-        # 1. Load and Paste the M0D icon at 40x40
-        icon = Image.open("M0D.png").convert("RGBA").resize((40, 40))
-        # Pasting at (100, 30) centers it horizontally (240/2 - 40/2 = 100)
-        bg.paste(icon, (100, 30), icon)
-        
-        # 2. Setup Fonts
+        if os.path.exists("M0D.png"):
+            icon = Image.open("M0D.png").convert("RGBA").resize((40, 40))
+            bg.paste(icon, (100, 30), icon)
         rune_font_large = ImageFont.truetype(RUNE_FONT_PATH, 45)
         title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
-    except Exception as e:
-        print(f"Bootup Assets Missing: {e}")
+    except:
         rune_font_large = title_font = ImageFont.load_default()
 
-    # 3. Draw the Runic Title (Center-ish)
-    # "RUNIC" in runes
     draw.text((45, 85), to_runes("RUNIC"), font=rune_font_large, fill=GLOW_BLUE)
-    
-    # 4. Draw "KEEPER" in English
     draw.text((75, 145), "KEEPER", font=title_font, fill=GOLD)
-    
-    # 5. Draw the decorative corner runes
     draw_rune_border(draw)
-
-    # Display to screen
     disp.display(bg)
     time.sleep(2.5)
-# --- 4. UI FUNCTIONS ---
+
 def show_inventory():
     global current_selection 
     inventory = load_inventory()
@@ -120,28 +110,23 @@ def show_inventory():
         draw.text((65, 110), "᛫ EMPTY ᛫", font=rune_font, fill=GHOST_BLUE)
     else:
         if current_selection >= len(inventory): current_selection = 0
-        
         start = max(0, current_selection - 2)
         end = min(len(inventory), start + 5)
         
         for i in range(start, end):
             rel_idx = i - start
             y_pos = 20 + (rel_idx * 44)
-            
             if i == current_selection:
-                # Active Selection (Bright Blue + Border)
                 draw.rectangle((10, y_pos - 4, 230, y_pos + 38), outline=GLOW_BLUE, width=2)
                 draw.text((20, y_pos), inventory[i].upper(), font=latin_font, fill=GLOW_BLUE)
                 draw.text((175, y_pos + 2), to_runes(inventory[i][:4]), font=rune_font, fill=GOLD)
             else:
-                # Inactive Items (Now Ghostly Blue Runes)
                 draw.text((20, y_pos), to_runes(inventory[i]), font=rune_font, fill=GHOST_BLUE)
 
     draw_rune_border(draw)
     disp.display(bg)
 
 def toggle_item(item_name):
-    global current_selection
     current_list = load_inventory()
     if item_name in current_list:
         current_list.remove(item_name)
@@ -165,8 +150,6 @@ def toggle_item(item_name):
     time.sleep(1.2)
     show_inventory()
 
-# --- 5. INTERACTION LOGIC ---
-
 def read_ndef_text():
     if pn532 is None: return None
     uid = pn532.read_passive_target(timeout=0.1)
@@ -184,38 +167,53 @@ def read_ndef_text():
         except: pass
     return None
 
-def handle_button(pin):
-    global current_selection
-    inv = load_inventory()
-    
-    if pin == 5 and inv: 
-        current_selection = (current_selection - 1) % len(inv)
-    elif pin == 6 and inv: 
-        current_selection = (current_selection + 1) % len(inv)
-    elif pin == 16: 
-        start_time = time.time()
-        while GPIO.input(16) == GPIO.LOW:
-            if time.time() - start_time > HOLD_DELAY:
-                open(INVENTORY_FILE, "w").close()
-                current_selection = 0
-                show_inventory()
-                return
-            time.sleep(0.1)
-    show_inventory()
+# --- 4. MAIN LOOP ---
 
-# --- 6. MAIN LOOP ---
 bootup()
 show_inventory()
 
-for p in BUTTONS:
-    GPIO.add_event_detect(p, GPIO.FALLING, callback=handle_button, bouncetime=300)
-
 try:
     while True:
+        # Check Button 24 (UP)
+        if GPIO.input(24) == GPIO.LOW:
+            inv = load_inventory()
+            if inv:
+                current_selection = (current_selection - 1) % len(inv)
+                show_inventory()
+            # Wait for button release (debounce)
+            while GPIO.input(24) == GPIO.LOW: time.sleep(0.05)
+
+        # Check Button 16 (DOWN or LONG PRESS)
+        if GPIO.input(16) == GPIO.LOW:
+            press_time = time.time()
+            is_long_press = False
+            
+            while GPIO.input(16) == GPIO.LOW:
+                if time.time() - press_time > HOLD_DELAY:
+                    # Trigger Inventory Clear
+                    open(INVENTORY_FILE, "w").close()
+                    current_selection = 0
+                    is_long_press = True
+                    show_inventory()
+                    while GPIO.input(16) == GPIO.LOW: time.sleep(0.05)
+                    break
+                time.sleep(0.05)
+            
+            if not is_long_press:
+                inv = load_inventory()
+                if inv:
+                    current_selection = (current_selection + 1) % len(inv)
+                    show_inventory()
+
+        # Check NFC
         scanned = read_ndef_text()
         if scanned and (time.time() - last_scan_time > 3):
             toggle_item(scanned)
             last_scan_time = time.time()
-        time.sleep(0.1)
+            
+        time.sleep(0.05)
+
 except KeyboardInterrupt:
+    print("\nClosing Runic Link...")
+finally:
     GPIO.cleanup()
